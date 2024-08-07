@@ -5,14 +5,23 @@ import (
 )
 
 type Request interface {
+	ModelJsonSchema() map[string]any
 }
 
 type Response interface {
+	ModelJsonSchema() map[string]any
 }
 
 type FileModel struct {
-	Name    string `json:"name"`
-	Content string `json:"content"`
+	Name    string         `json:"name"`
+	Content map[string]any `json:"content"`
+}
+
+func (fm *FileModel) ModelJsonSchema() (res map[string]any) {
+	res = make(map[string]any)
+	res["name"] = fm.Name
+	res["content"] = fm.Content
+	return res
 }
 
 type Action interface {
@@ -27,6 +36,7 @@ type Action interface {
 	SetRequestSchema(request Request)
 	ResponseSchema() Response
 	SetResponseSchema(response Response)
+	Execute()
 }
 
 type BaseAction struct {
@@ -172,66 +182,78 @@ func (b *BaseAction) GetToolMergedActionName() string {
 //}
 
 //func (b *BaseAction)checkFileUploadable(param string) bool {
-//	return (
-//		b.requestSchema.ModelJsonSchema()
-//	.get("properties",
-//	{
-//	})
-//	.get(param,
-//	{
-//	})
-//	.get("allOf",[
-//	{
-//	}])[0]
-//.get("properties", {})) == FileModel.ModelJsonSchema().get("properties")
-//|| b.requestSchema.ModelJsonSchema()
-//.get("properties", {})
-//.get(param, {})
-//.get("properties", {})==FileModel.ModelJsonSchema().get("properties")
+//	return (b.requestSchema.ModelJsonSchema()["properties"][param]["allOf"][0]["properties"]
+//	== FileModel.ModelJsonSchema()["properties"] || b.requestSchema.ModelJsonSchema()["properties"][param]["properties"]
+//	==FileModel.ModelJsonSchema()["properties"])
 //}
+//
 //func (b *BaseAction)ExecuteAction(
 //	requestData Request,
-//	metaData map[string]interface{},
-//) (map[string]interface{}, Response){
-//	modified_request_data: t.Dict[str, t.Union[str, t.Dict[str, str]]] = {}
-//	for param, value in request_data.items():  # type: ignore
-//	if param not in self.request_schema.model_fields:
-//	raise ValueError(
-//	f"Invalid param `{param}` for action `{self.get_tool_merged_action_name().upper()}`"
-//)
-//	annotations = self.request_schema.model_fields[param].json_schema_extra
-//	file_readable = annotations is not None and annotations.get(  # type: ignore
-//	"file_readable", False
-//)
+//	metaData map[string]any,
+//) (map[string]any, Response){
+//	modifiedRequestData:= make(map[string]any)
+//	for param, value :=range requestData.Items(){// # type: ignore
+//		if _,ok:=b.requestSchema.ModelFields[param];!ok{
+//			panic(fmt.Errorf("invalid param %v for action %v",param,strings.ToUpper(b.GetToolMergedActionName())))
+//		}
+//		annotations := b.requestSchema.ModelFields[param].JsonSchemaExtra
+//		fileReadable := annotations != nil && annotations["file_readable"]
+//		if fileReadable && isinstance(value, string) && os.path.isfile(value) {
+//			with
+//			open(value, "rb")
+//			as
+//		file:
+//			file_content = file.read()
+//			file_content.decode(
+//				"utf-8"
+//			)  # Try
+//			decoding
+//			as
+//			UTF - 8
+//			to
+//			check
+//			if it's normal text
+//			modified_request_data[param] = file_content.decode("utf-8")
+//			except
+//		UnicodeDecodeError:
+//			# If
+//			decoding
+//			fails, treat
+//			as
+//			binary
+//			and
+//			encode
+//			in
+//			base64
+//			modified_request_data[param] = base64.b64encode(
+//				file_content
+//			).decode("utf-8")
+//		}else if b._check_file_uploadable(param=param) && isinstance(value, str)
+//	&& os.path.isfile(value)
+//		{
+//			# For
+//			uploadable
+//			files, we
+//			also
+//			need
+//			to
+//			send
+//			the
+//			filename
+//			with
+//			open(value, "rb")
+//			as
+//		file:
+//			file_content = file.read()
 //
-//	if file_readable and isinstance(value, str) and os.path.isfile(value):
-//	with open(value, "rb") as file:
-//	file_content = file.read()
-//	file_content.decode(
-//	"utf-8"
-//)  # Try decoding as UTF-8 to check if it's normal text
-//	modified_request_data[param] = file_content.decode("utf-8")
-//	except UnicodeDecodeError:
-//	# If decoding fails, treat as binary and encode in base64
-//	modified_request_data[param] = base64.b64encode(
-//	file_content
-//).decode("utf-8")
-//	elif (
-//	self._check_file_uploadable(param=param)
-//	and isinstance(value, str)
-//	and os.path.isfile(value)
-//):
-//	# For uploadable files, we also need to send the  filename
-//	with open(value, "rb") as file:
-//	file_content = file.read()
-//
-//	modified_request_data[param] = {
-//	"name": os.path.basename(value),
-//	"content": base64.b64encode(file_content).decode("utf-8"),
-//}
-//	else:
-//	modified_request_data[param] = value
-//
+//			modified_request_data[param] =
+//			{
+//				"name": os.path.basename(value),
+//				"content": base64.b64encode(file_content).decode("utf-8"),
+//			}
+//		}else {
+//			modified_request_data[param] = value
+//		}
 //	return self.execute(
 //	request_data=self.request_schema.model_validate_json(
 //	json_data=json.dumps(

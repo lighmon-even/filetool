@@ -132,7 +132,7 @@ func (fm *FileManager) Chdir(path string) error {
 		return fmt.Errorf("access denied: cannot navigate to '%s'", newDir)
 	}
 
-	if info, err := os.Stat(newDir); err != nil || !info.IsDir() {
+	if ok, _ := isFile(newDir); ok {
 		return fmt.Errorf("'%s' is not a valid directory", newDir)
 	}
 
@@ -194,7 +194,7 @@ func (fm *FileManager) Grep(word string, pattern string, options ...Option) (map
 	}
 	results := make(map[string][]Match)
 	for _, filePath := range pathsToSearch {
-		if info, err := os.Stat(filePath); !info.IsDir() && err == nil && filepath.Base(filePath)[0] != '.' {
+		if ok, _ := isFile(filePath); ok && filepath.Base(filePath)[0] != '.' {
 			f, err := os.Open(filePath)
 			if err != nil {
 				return nil, err
@@ -325,7 +325,7 @@ func formatWord(word string, caseInsensitive bool) string {
 func getPathsToSearch(pattern string, recursive bool) (pathsToSearch []string, err error) {
 	// 获取要搜索的路径
 	pathsToSearch = make([]string, 0)
-	if info, err := os.Stat(pattern); info.IsDir() && err == nil {
+	if ok, _ := isFile(pattern); ok && err == nil {
 		if recursive {
 			err = filepath.Walk(pattern, func(path string, info os.FileInfo, err error) error {
 				if err != nil {
@@ -360,13 +360,13 @@ func (fm *FileManager) tree(
 	}
 	for _, child := range childs {
 		path := filepath.Join(directory, child.Name())
-		if info, err := os.Stat(path); !info.IsDir() && err == nil {
+		if ok, _ := isFile(path); ok && err == nil {
 			tree += strings.Repeat("  |", level) + "__ " + filepath.Base(path) + "\n"
 		}
 	}
 	for _, child := range childs {
 		path := filepath.Join(directory, child.Name())
-		if info, err := os.Stat(path); !info.IsDir() && err == nil {
+		if info, err := os.Stat(path); info.IsDir() && err == nil {
 			continue
 		}
 		tree += strings.Repeat("  |", level) + "__ " + filepath.Base(path) + "\n"
