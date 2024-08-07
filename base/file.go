@@ -232,7 +232,7 @@ func (f *File) WriteAndRunLint(text string, start int, end int) TextReplacement 
 	olderFileText, _ := os.ReadFile(f.Path)
 	writeResponse := f.Edit(text, start, end, ScopeWindow)
 	if writeResponse.Error != nil {
-		_ = os.WriteFile(f.Path, []byte(olderFileText), 0644)
+		_ = os.WriteFile(f.Path, olderFileText, 0644)
 		return writeResponse
 	}
 	return writeResponse
