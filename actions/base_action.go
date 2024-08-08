@@ -36,7 +36,9 @@ type FileAction interface {
 	ExecuteOnFileManager(fileManager FileManager, requestData BaseFileRequest) BaseFileResponse
 }
 
-type BaseFileAction struct{}
+type BaseFileAction struct {
+	*base.BaseAction
+}
 
 func NewBaseFileAction() *BaseFileAction {
 	return &BaseFileAction{}

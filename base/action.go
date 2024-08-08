@@ -36,7 +36,9 @@ type Action interface {
 	SetRequestSchema(request Request)
 	ResponseSchema() Response
 	SetResponseSchema(response Response)
-	Execute()
+	Execute(Request, map[string]interface{}) (map[string]interface{}, Response)
+	RequiredScopes() []string
+	GetToolMergedActionName() string
 }
 
 type BaseAction struct {
