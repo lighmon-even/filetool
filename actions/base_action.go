@@ -1,6 +1,6 @@
 package actions
 
-import "filetool/base"
+import "github.com/lighmon-even/filetool/base"
 
 type FileManager = base.FileManager
 
@@ -8,10 +8,19 @@ type data struct {
 	FileManagers map[string]FileManager
 }
 
+type FileRequest interface {
+	base.Request
+}
+
 type BaseFileRequest struct {
 	//"ID of the file manager where the file will be opened, if not "
 	//"provided the recent file manager will be used to execute the action"
+	*base.BaseModel
 	FileManagerId string
+}
+
+type FileResponse interface {
+	base.Response
 }
 
 func NewBaseFileRequest(fileManagerId string) *BaseFileRequest {
@@ -20,6 +29,7 @@ func NewBaseFileRequest(fileManagerId string) *BaseFileRequest {
 
 type BaseFileResponse struct {
 	//"Error message if the action failed"
+	*base.BaseModel
 	Error error
 	//"Current working directory of the file manager."
 	CurrentWorkingDirectory string
@@ -33,6 +43,7 @@ func NewBaseFileResponse(currentWorkingDirectory string) *BaseFileResponse {
 }
 
 type FileAction interface {
+	base.Action
 	ExecuteOnFileManager(fileManager FileManager, requestData BaseFileRequest) BaseFileResponse
 }
 
@@ -44,10 +55,11 @@ func NewBaseFileAction() *BaseFileAction {
 	return &BaseFileAction{}
 }
 
-func (s *BaseFileAction) ExecuteOnFileManager(fileManager FileManager, requestData BaseFileRequest) BaseFileResponse {
-	return BaseFileResponse{}
+func (s *BaseFileAction) ExecuteOnFileManager(fileManager FileManager, requestData FileRequest) (map[string]any, FileResponse) {
+	return nil, NewBaseFileResponse()
 }
-func (s *BaseFileAction) Execute(requestData BaseFileRequest, authorisationData map[string]data) BaseFileResponse {
+
+func (s *BaseFileAction) Execute(requestData FileRequest, authorisationData map[string]data) FileResponse {
 	fileManagers := authorisationData["workspace"].FileManagers // type: ignore
 	fileManager := fileManagers[requestData.FileManagerId]
 	resp := s.ExecuteOnFileManager(fileManager, requestData)

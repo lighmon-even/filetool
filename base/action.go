@@ -1,27 +1,33 @@
 package base
 
 import (
+	"encoding/base64"
+	"fmt"
+	"github.com/goccy/go-json"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
+	"unicode/utf8"
 )
 
 type Request interface {
-	ModelJsonSchema() map[string]any
+	Model
 }
 
 type Response interface {
-	ModelJsonSchema() map[string]any
+	Model
 }
 
 type FileModel struct {
-	Name    string         `json:"name"`
-	Content map[string]any `json:"content"`
+	*BaseModel
+	Name    string `json:"name"`
+	Content []byte `json:"content"`
 }
 
-func (fm *FileModel) ModelJsonSchema() (res map[string]any) {
-	res = make(map[string]any)
-	res["name"] = fm.Name
-	res["content"] = fm.Content
-	return res
+var BaseFileModel = FileModel{
+	Name:    "",
+	Content: nil,
 }
 
 type Action interface {
@@ -36,9 +42,12 @@ type Action interface {
 	SetRequestSchema(request Request)
 	ResponseSchema() Response
 	SetResponseSchema(response Response)
-	Execute(Request, map[string]interface{}) (map[string]interface{}, Response)
+	Execute(Request, map[string]any) (map[string]any, Response)
 	RequiredScopes() []string
 	GetToolMergedActionName() string
+	checkFileUploadable(param string) bool
+	ExecuteAction(Request, map[string]any,
+	) (map[string]any, Response)
 }
 
 type BaseAction struct {
@@ -110,7 +119,7 @@ func (b *BaseAction) SetResponseSchema(value Response) {
 	b.responseSchema = value
 }
 
-func (b *BaseAction) Execute(requestData Request, authorisationData map[string]interface{}) (map[string]interface{}, Response) {
+func (b *BaseAction) Execute(requestData Request, authorisationData map[string]any) (map[string]any, Response) {
 	return nil, nil
 }
 
@@ -183,103 +192,62 @@ func (b *BaseAction) GetToolMergedActionName() string {
 //	return actionSchema
 //}
 
-//func (b *BaseAction)checkFileUploadable(param string) bool {
-//	return (b.requestSchema.ModelJsonSchema()["properties"][param]["allOf"][0]["properties"]
-//	== FileModel.ModelJsonSchema()["properties"] || b.requestSchema.ModelJsonSchema()["properties"][param]["properties"]
-//	==FileModel.ModelJsonSchema()["properties"])
-//}
-//
-//func (b *BaseAction)ExecuteAction(
-//	requestData Request,
-//	metaData map[string]any,
-//) (map[string]any, Response){
-//	modifiedRequestData:= make(map[string]any)
-//	for param, value :=range requestData.Items(){// # type: ignore
-//		if _,ok:=b.requestSchema.ModelFields[param];!ok{
-//			panic(fmt.Errorf("invalid param %v for action %v",param,strings.ToUpper(b.GetToolMergedActionName())))
-//		}
-//		annotations := b.requestSchema.ModelFields[param].JsonSchemaExtra
-//		fileReadable := annotations != nil && annotations["file_readable"]
-//		if fileReadable && isinstance(value, string) && os.path.isfile(value) {
-//			with
-//			open(value, "rb")
-//			as
-//		file:
-//			file_content = file.read()
-//			file_content.decode(
-//				"utf-8"
-//			)  # Try
-//			decoding
-//			as
-//			UTF - 8
-//			to
-//			check
-//			if it's normal text
-//			modified_request_data[param] = file_content.decode("utf-8")
-//			except
-//		UnicodeDecodeError:
-//			# If
-//			decoding
-//			fails, treat
-//			as
-//			binary
-//			and
-//			encode
-//			in
-//			base64
-//			modified_request_data[param] = base64.b64encode(
-//				file_content
-//			).decode("utf-8")
-//		}else if b._check_file_uploadable(param=param) && isinstance(value, str)
-//	&& os.path.isfile(value)
-//		{
-//			# For
-//			uploadable
-//			files, we
-//			also
-//			need
-//			to
-//			send
-//			the
-//			filename
-//			with
-//			open(value, "rb")
-//			as
-//		file:
-//			file_content = file.read()
-//
-//			modified_request_data[param] =
-//			{
-//				"name": os.path.basename(value),
-//				"content": base64.b64encode(file_content).decode("utf-8"),
-//			}
-//		}else {
-//			modified_request_data[param] = value
-//		}
-//	return self.execute(
-//	request_data=self.request_schema.model_validate_json(
-//	json_data=json.dumps(
-//	modified_request_data,
-//)
-//),
-//	authorisation_data=metadata,
-//)
-//	except json.JSONDecodeError as e:
-//	return {
-//	"status": "failure",
-//	"details": f"Could not parse response with error: {e}. Please contact the tool developer.",
-//}
-//	except Exception as e:
-//	self.logger.error(
-//	"Error while executing `%s` with parameters `%s`; Error: %s",
-//	self.display_name,
-//	request_data,
-//	traceback.format_exc(),
-//)
-//	return {
-//	"status": "failure",
-//	"details": "Error executing action with error: " + str(e),
-//}
-//
-//}
-//}
+func (b *BaseAction) checkFileUploadable(param string) bool {
+	/*
+		return b.requestSchema.ModelJsonSchema().Get("properties").Get(param).Get("allOf").(JsonArray)[0].Get("properties") ==
+			BaseFileModel.ModelJsonSchema().Get("properties") ||
+			b.requestSchema.ModelJsonSchema().Get("properties").Get(param).Get("properties") ==
+				BaseFileModel.ModelJsonSchema().Get("properties")
+	*/
+	return true
+}
+
+func (b *BaseAction) ExecuteAction(
+	requestData Request,
+	metaData map[string]any,
+) (map[string]any, Response) {
+	modifiedRequestData := make(map[string]any)
+	for param, value := range requestData.Items() { // # type: ignore
+		if _, ok := b.requestSchema.GetModelFields()[param]; !ok {
+			panic(fmt.Errorf("invalid param %v for action %v", param, strings.ToUpper(b.GetToolMergedActionName())))
+		}
+		annotations := b.requestSchema.GetModelFields()[param].Get("JsonSchemaExtra")
+		fileReadable := bool(annotations != nil && annotations.Get("file_readable").(JsonBool))
+		if ok, _ := isFile(string(value.(JsonString))); fileReadable && isInstance(value, "JsonString") && ok {
+			fileContent, err := os.ReadFile(ToString(value))
+			if err != nil {
+			}
+			if utf8.Valid(fileContent) { //  # Try decoding	as UTF - 8 to check	if it's normal text
+				modifiedRequestData[param] = string(fileContent)
+			} else { //# If decoding fails, treat as binary and encode in base64
+				modifiedRequestData[param] = base64.StdEncoding.EncodeToString(fileContent)
+			}
+		} else if b.checkFileUploadable(param) && isInstance(value, "string") && ok {
+			// For uploadable files, we	also need to send the filename
+			fileContent, err := os.ReadFile(ToString(value))
+			if err != nil {
+			}
+			modifiedRequestData[param] = map[string]string{
+				"name":    filepath.Base(ToString(value)),
+				"content": base64.StdEncoding.EncodeToString(fileContent),
+			}
+		} else {
+			modifiedRequestData[param] = value
+		}
+	}
+	instance, _ := json.Marshal(modifiedRequestData)
+	res1, res2 := b.Execute(b.requestSchema.ModelValidateJson(instance), metaData)
+
+	if r := recover(); r != nil {
+		return map[string]any{
+			"status":  "failure",
+			"details": "Error executing action with error: " + r.(error).Error(),
+		}, nil
+	} else {
+		return res1, res2
+	}
+}
+
+func isInstance(value any, s string) bool {
+	return reflect.TypeOf(value).Name() == s
+}

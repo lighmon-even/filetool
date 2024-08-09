@@ -1,3 +1,25 @@
-module filetool
+module github.com/lighmon-even/filetool
 
 go 1.22.5
+
+require github.com/kaptinlin/jsonschema v0.2.1
+
+require (
+	github.com/bahlo/generic-list-go v0.2.0 // indirect
+	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/fatih/color v1.17.0 // indirect
+	github.com/goccy/go-json v0.10.3 // indirect
+	github.com/goccy/go-yaml v1.11.3 // indirect
+	github.com/gotnospirit/makeplural v0.0.0-20180622080156-a5f48d94d976 // indirect
+	github.com/gotnospirit/messageformat v0.0.0-20221001023931-dfe49f1eb092 // indirect
+	github.com/invopop/jsonschema v0.12.0 // indirect
+	github.com/kaptinlin/go-i18n v0.1.3 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
+	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
+	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+)

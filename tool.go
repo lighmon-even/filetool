@@ -1,9 +1,9 @@
 package filetool
 
 import (
-	"filetool/actions"
-	. "filetool/base"
 	"fmt"
+	"github.com/lighmon-even/filetool/actions"
+	. "github.com/lighmon-even/filetool/base"
 )
 
 type (
