@@ -2,8 +2,8 @@ package actions
 
 import (
 	"errors"
-	"filetool/base"
 	"fmt"
+	"github.com/lighmon-even/filetool/base"
 )
 
 type EditFileRequest struct {
@@ -69,11 +69,16 @@ type EditFile struct {
 	//This action edits a specific part of the file, if you want to rewrite the
 	//complete file, use `write` tool instead.
 	//"""
-	displayName    string           // = "Edit a file"
-	requestSchema  EditFileRequest  // = EditFileRequest
-	responseSchema EditFileResponse //= EditFileResponse
+	displayName    string            // = "Edit a file"
+	requestSchema  *EditFileRequest  // = EditFileRequest
+	responseSchema *EditFileResponse //= EditFileResponse
 }
 
+func NewEditFile() *EditFile {
+	return &EditFile{
+		displayName: "Edit a file",
+	}
+}
 func (ef *EditFile) ExecuteOnFileManager(
 	fileManager FileManager,
 	requestData EditFileRequest,

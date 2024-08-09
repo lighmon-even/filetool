@@ -44,7 +44,7 @@ func NewCreateFileResponse(file string, success bool) *CreateFileResponse {
 }
 
 type CreateFile struct {
-	*BaseFileRequest
+	*BaseFileAction
 	//"""
 	//Creates a new file within a shell session.
 	//Example:
@@ -64,6 +64,11 @@ type CreateFile struct {
 	responseSchema *ChwdirResponse    //= CreateFileResponse
 }
 
+func NewCreateFile() *CreateFile {
+	return &CreateFile{
+		displayName: "Create a new file",
+	}
+}
 func (cf *CreateFile) ExecuteOnFileManager(
 	fileManager FileManager, requestData CreateFileRequest,
 ) (cfr *CreateFileResponse) {

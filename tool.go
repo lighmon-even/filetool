@@ -6,10 +6,10 @@ import (
 	. "github.com/lighmon-even/filetool/base"
 )
 
-type (
-	ChangeWorkingDirectory = actions.ChangeWorkingDirectory
-	CreateFile             = actions.CreateFile
-	EditFile               = actions.EditFile
+var (
+	ChangeWorkingDirectory = actions.NewChangeWorkingDirectory()
+	CreateFile             = actions.NewCreateFile()
+	EditFile               = actions.NewEditFile()
 )
 
 type FileTool struct {

@@ -10,6 +10,7 @@ type data struct {
 
 type FileRequest interface {
 	base.Request
+	GetFileManagerID() string
 }
 
 type BaseFileRequest struct {
@@ -17,6 +18,10 @@ type BaseFileRequest struct {
 	//"provided the recent file manager will be used to execute the action"
 	*base.BaseModel
 	FileManagerId string
+}
+
+func (bfr *BaseFileRequest) GetFileManagerId() string {
+	return bfr.FileManagerId
 }
 
 type FileResponse interface {
@@ -56,13 +61,14 @@ func NewBaseFileAction() *BaseFileAction {
 }
 
 func (s *BaseFileAction) ExecuteOnFileManager(fileManager FileManager, requestData FileRequest) (map[string]any, FileResponse) {
-	return nil, NewBaseFileResponse()
+	return nil, NewBaseFileResponse("")
 }
 
-func (s *BaseFileAction) Execute(requestData FileRequest, authorisationData map[string]data) FileResponse {
-	fileManagers := authorisationData["workspace"].FileManagers // type: ignore
-	fileManager := fileManagers[requestData.FileManagerId]
-	resp := s.ExecuteOnFileManager(fileManager, requestData)
-	resp.CurrentWorkingDirectory = fileManager.WorkingDir
-	return resp
+func (s *BaseFileAction) Execute(requestData base.Request, authorisationData map[string]any) (map[string]any, base.Response) {
+	//workPlace := authorisationData["workspace"]
+	//fileManagers := workPlace.FileManagers // type: ignore
+	//fileManager := fileManagers[requestData.GetFileManagerId()]
+	//resp := s.ExecuteOnFileManager(fileManager, requestData)
+	//resp.CurrentWorkingDirectory = fileManager.WorkingDir
+	return nil, nil
 }

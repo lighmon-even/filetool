@@ -238,13 +238,10 @@ func (f *File) WriteAndRunLint(text string, start int, end int) TextReplacement 
 	return writeResponse
 }
 
-func isFile(path string) (bool, error) {
+func isFile(path string) bool {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
-		return false, nil // 路径不存在
+		return false
 	}
-	if err != nil {
-		return false, err // 其他错误
-	}
-	return !info.IsDir(), nil // 不是目录即为文件
+	return !info.IsDir()
 }
